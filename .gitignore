@@ -1,2 +1,8 @@
 node_modules
+*.log*
 .idea
+.cache
+.output
+.env
+dist
+.DS_Store
