@@ -1,11 +1,20 @@
-import { Body, Controller, Get, HttpStatus, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { answers, answerType } from '../../lib/answers';
-import { Jwt } from '../../lib/decorators/jwt.decorator';
 import { Response } from 'express';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { AuthGuard } from '../../lib/guards/auth.guard';
+import { ParaphraserAPI } from '../../lib/api/paraphraser';
 
 @Controller('auth')
 export class AuthController {
@@ -49,11 +58,11 @@ export class AuthController {
   }
 
   @Get('validate')
-  async validate(@Jwt() data: object): Promise<answerType> {
+  @UseGuards(AuthGuard)
+  async validate(): Promise<answerType> {
     return {
       statusCode: HttpStatus.OK,
       message: answers.success.user.login,
-      data,
     };
   }
 
@@ -66,5 +75,12 @@ export class AuthController {
       statusCode: HttpStatus.OK,
       message: answers.success.user.logout,
     };
+  }
+
+  @Get('test')
+  async test() {
+    const api = new ParaphraserAPI();
+    await api.checkWord('крыша');
+    return 'done';
   }
 }

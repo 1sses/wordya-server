@@ -15,8 +15,29 @@ model User {
   email String  @unique
   password String
   name  String
+  emailActivations EmailActivation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Game {
+model EmailActivation {
+  id    Int     @default(autoincrement()) @id
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  token String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FiveInARow {
   id Int @default(autoincrement()) @id
+  word String
+  status FiveInARowStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum FiveInARowStatus {
+  WIN
+  LOSE
 }

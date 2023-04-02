@@ -9,11 +9,11 @@ import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(helmet());
-  app.use(csurf());
   app.use(cookieParser());
+  app.enableCors({ credentials: true, origin: process.env.ORIGIN });
+  // app.use(csurf());
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);
-  app.enableCors({ credentials: true, origin: process.env.ORIGIN });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   await app.listen(3030);
   console.log('App is started!');

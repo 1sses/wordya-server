@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import * as process from 'process';
 import { answers } from '../answers';
 
 export const Jwt = createParamDecorator(
