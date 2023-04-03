@@ -12,32 +12,52 @@ datasource db {
 
 model User {
   id    Int     @default(autoincrement()) @id
+  emailActivation EmailActivation?
+  profile Profile?
   email String  @unique
   password String
   name  String
-  emailActivations EmailActivation[]
+  status UserStatus @default(INACTIVE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model EmailActivation {
   id    Int     @default(autoincrement()) @id
-  userId Int
+  userId Int @unique
   user User @relation(fields: [userId], references: [id])
-  token String
+  token String @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Profile {
+  id    Int     @default(autoincrement()) @id
+  userId Int @unique
+  user User @relation(fields: [userId], references: [id])
+  fiveInARows FiveInARow[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model FiveInARow {
   id Int @default(autoincrement()) @id
+  profileId Int
+  profile Profile @relation(fields: [profileId], references: [id])
   word String
   status FiveInARowStatus
+  attempts String[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 enum FiveInARowStatus {
+  IN_PROGRESS
   WIN
   LOSE
 }
