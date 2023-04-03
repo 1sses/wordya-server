@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpStatus,
+  Param,
   Post,
   Res,
   UseGuards,
@@ -24,11 +25,21 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(
-    @Body() registerDto: RegisterDto,
+  async register(@Body() registerDto: RegisterDto): Promise<answerType> {
+    const user = await this.authService.register(registerDto);
+    return {
+      statusCode: HttpStatus.CREATED,
+      message: answers.success.user.created,
+      data: { user },
+    };
+  }
+
+  @Get('confirm-email/:token')
+  async confirmEmail(
+    @Param('token') token: string,
     @Res({ passthrough: true }) response: Response,
   ): Promise<answerType> {
-    const user = await this.authService.register(registerDto);
+    const user = await this.authService.confirmEmail({ token });
     response.cookie('jwt', this.jwtService.sign({ id: user.id }), {
       httpOnly: true,
       expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),

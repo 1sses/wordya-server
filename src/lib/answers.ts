@@ -28,6 +28,7 @@ export const answers = {
     item: {
       notFound: 'Элемент не найден!',
     },
+    unknown: 'Произошла ошибка!',
   },
 };
 

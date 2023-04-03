@@ -1,18 +1,24 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { MailerService } from '@nestjs-modules/mailer';
+import { User, UserStatus } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
-import bcrypt from 'bcryptjs';
 import { answers } from '../../lib/answers';
 import { PrismaService } from '../../lib/prisma/prisma.service';
-import { User } from '@prisma/client';
 import { RegisterDto } from './dto/register.dto';
+import { getLink } from '../../lib/utils/getLink';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly mailerService: MailerService,
+  ) {}
 
   async register({ email, password, name }: RegisterDto): Promise<User> {
     const isAlreadyExist = await this.prisma.user.findUnique({
@@ -22,20 +28,48 @@ export class AuthService {
       throw new BadRequestException(answers.error.user.alreadyExists);
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: { email, password: hashedPassword, name },
     });
+    const activation = await this.prisma.emailActivation.create({
+      data: { userId: user.id },
+    });
+    void this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Активация аккаунта',
+      template: 'email-activation',
+      context: {
+        name: user.name,
+        link: getLink({ type: 'confirm-email', token: activation.token }),
+      },
+    });
+    return user;
   }
 
   async login({ email, password }: LoginDto): Promise<User> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new BadRequestException(answers.error.user.notFound);
+      throw new NotFoundException(answers.error.user.notFound);
     }
     const isPasswordValid = await bcrypt.compare(user.password, password);
     if (!isPasswordValid) {
       throw new UnauthorizedException(answers.error.user.badCredentials);
     }
+    return user;
+  }
+
+  async confirmEmail({ token }: { token: string }): Promise<User> {
+    const activation = await this.prisma.emailActivation.findFirst({
+      where: { token },
+    });
+    if (!activation) {
+      throw new BadRequestException(answers.error.unknown);
+    }
+    const user = await this.prisma.user.update({
+      where: { id: activation.userId },
+      data: { status: UserStatus.ACTIVE },
+    });
+    await this.prisma.emailActivation.delete({ where: { id: activation.id } });
     return user;
   }
 }
