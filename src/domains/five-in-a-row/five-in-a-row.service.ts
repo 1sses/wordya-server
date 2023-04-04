@@ -60,19 +60,22 @@ export class FiveInARowService {
       orderBy: { createdAt: 'desc' },
     });
     if (!lastGame) throw new Error(answers.error.fiveInARow.notFound);
-    const checkResult = await this.paraphraserApi.checkWord(word);
-    console.log(checkResult);
-    const validate = checkResult.response['1'];
-    console.log(validate);
-    if (validate.original !== validate.lemma || validate.vector.length === 0) {
-      return {
-        valid: false,
-        matches: [],
-        game: lastGame,
-      };
+    const { response } = await this.paraphraserApi.checkWord(word);
+    for (const key in response) {
+      if (
+        response[key].original === response[key].lemma &&
+        response[key].vector.length > 0
+      )
+        break;
+      if (!response[+key + 1]) {
+        return {
+          valid: false,
+          matches: [],
+          game: lastGame,
+        };
+      }
     }
     const matches = this.match(word, lastGame.word);
-    console.log(lastGame.word, word, matches);
     const updatedGame = await this.prisma.fiveInARow.update({
       where: { id: lastGame.id },
       data: { attempts: { push: word } },
@@ -93,8 +96,6 @@ export class FiveInARowService {
     const status = lastGame.attempts.includes(lastGame.word)
       ? FiveInARowStatus.WIN
       : FiveInARowStatus.LOSE;
-    if (!lastGame.attempts.includes(lastGame.word))
-      throw new Error(answers.error.fiveInARow.unableToEnd);
     return this.prisma.fiveInARow.update({
       where: { id: lastGame.id },
       data: { status },
