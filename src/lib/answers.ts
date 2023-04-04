@@ -25,16 +25,21 @@ export const answers = {
       badCredentials: 'Неверный логин или пароль!',
       invalidToken: 'Требуется авторизация!',
     },
-    item: {
-      notFound: 'Элемент не найден!',
+    fiveInARow: {
+      notFound: 'Игра не найдена!',
+      unableToEnd: 'Невозможно закончить игру!',
     },
     unknown: 'Произошла ошибка!',
   },
 };
 
 export type answerType = {
+  ok: boolean;
   statusCode: number;
   message: string | Array<string>;
-  error?: string;
+  error?: {
+    timestamp: string;
+    path: string;
+  };
   data?: any;
 };

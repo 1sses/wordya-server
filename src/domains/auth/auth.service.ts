@@ -31,18 +31,23 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: { email, password: hashedPassword, name },
     });
-    const activation = await this.prisma.emailActivation.create({
-      data: { userId: user.id },
-    });
-    void this.mailerService.sendMail({
-      to: user.email,
-      subject: 'Активация аккаунта',
-      template: 'email-activation',
-      context: {
-        name: user.name,
-        link: getLink({ type: 'confirm-email', token: activation.token }),
-      },
-    });
+    await this.prisma.profile.create({ data: { userId: user.id } });
+    // const activation = await this.prisma.emailActivation.create({ // TODO: fix mail SPAM
+    //   data: { userId: user.id },
+    // });
+    // void this.mailerService
+    //   .sendMail({
+    //     to: user.email,
+    //     subject: 'Активация аккаунта',
+    //     template: 'email-activation',
+    //     context: {
+    //       name: user.name,
+    //       link: getLink({ type: 'confirm-email', token: activation.token }),
+    //     },
+    //   })
+    //   .catch(() => {
+    //     throw new BadRequestException('Error sending email');
+    //   });
     return user;
   }
 
@@ -51,7 +56,7 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException(answers.error.user.notFound);
     }
-    const isPasswordValid = await bcrypt.compare(user.password, password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException(answers.error.user.badCredentials);
     }

@@ -5,6 +5,7 @@ import {
   HttpException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { answerType } from '../answers';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -15,9 +16,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
 
     response.status(status).json({
+      ok: false,
       statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-    });
+      message: exception.message,
+      error: {
+        timestamp: new Date().toISOString(),
+        path: request.url,
+      },
+    } as answerType);
   }
 }

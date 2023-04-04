@@ -28,6 +28,7 @@ export class AuthController {
   async register(@Body() registerDto: RegisterDto): Promise<answerType> {
     const user = await this.authService.register(registerDto);
     return {
+      ok: true,
       statusCode: HttpStatus.CREATED,
       message: answers.success.user.created,
       data: { user },
@@ -45,6 +46,7 @@ export class AuthController {
       expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
     });
     return {
+      ok: true,
       statusCode: HttpStatus.CREATED,
       message: answers.success.user.created,
       data: { user },
@@ -62,6 +64,7 @@ export class AuthController {
       expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
     });
     return {
+      ok: true,
       statusCode: HttpStatus.OK,
       message: answers.success.user.login,
       data: { user },
@@ -72,6 +75,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   async validate(): Promise<answerType> {
     return {
+      ok: true,
       statusCode: HttpStatus.OK,
       message: answers.success.user.login,
     };
@@ -83,6 +87,7 @@ export class AuthController {
   ): Promise<answerType> {
     response.cookie('jwt', '');
     return {
+      ok: true,
       statusCode: HttpStatus.OK,
       message: answers.success.user.logout,
     };

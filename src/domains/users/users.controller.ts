@@ -12,6 +12,7 @@ export class UsersController {
   async findAll(): Promise<answerType> {
     const data = await this.usersService.findAll();
     return {
+      ok: true,
       statusCode: HttpStatus.OK,
       message: answers.success.user.getAll,
       data,
@@ -22,6 +23,7 @@ export class UsersController {
   async findOne(@Param('id') id: number): Promise<answerType> {
     const data = await this.usersService.findOne(id);
     return {
+      ok: true,
       statusCode: HttpStatus.OK,
       message: answers.success.user.getOne,
       data,

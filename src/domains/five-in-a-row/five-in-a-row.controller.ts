@@ -1,16 +1,55 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { FiveInARowService } from './five-in-a-row.service';
+import { answerType } from '../../lib/answers';
+import { AuthGuard } from '../../lib/guards/auth.guard';
+import { CheckWordDto } from './dto/check-word.dto';
 
 @Controller('five-in-a-row')
+@UseGuards(AuthGuard)
 export class FiveInARowController {
   constructor(private readonly fiveInARowService: FiveInARowService) {}
 
   @Get('start')
-  async startGame() {}
+  async start(@Param('userId') userId: number): Promise<answerType> {
+    const result = await this.fiveInARowService.start(userId);
+    return {
+      ok: true,
+      statusCode: HttpStatus.OK,
+      message: '',
+      data: { result },
+    };
+  }
 
-  @Post('check')
-  async checkWord() {}
+  @Post('check-word')
+  async checkWord(
+    @Param('userId') userId: number,
+    @Body() checkWordDto: CheckWordDto,
+  ): Promise<answerType> {
+    const result = await this.fiveInARowService.checkWord(userId, checkWordDto);
+    return {
+      ok: true,
+      statusCode: HttpStatus.OK,
+      message: '',
+      data: { result },
+    };
+  }
 
   @Get('end')
-  async endGame() {}
+  async end(@Param('userId') userId: number): Promise<answerType> {
+    const game = await this.fiveInARowService.end(userId);
+    return {
+      ok: true,
+      statusCode: HttpStatus.OK,
+      message: '',
+      data: { game },
+    };
+  }
 }

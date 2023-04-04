@@ -44,7 +44,7 @@ export class ParaphraserAPI {
         scores: 0,
       },
     });
-    console.log(response.data);
+    return response.data;
   }
 
   public getRandomWord() {

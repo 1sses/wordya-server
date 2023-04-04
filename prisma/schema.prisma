@@ -50,8 +50,8 @@ model FiveInARow {
   profileId Int
   profile Profile @relation(fields: [profileId], references: [id])
   word String
-  status FiveInARowStatus
-  attempts String[]
+  status FiveInARowStatus @default(IN_PROGRESS)
+  attempts String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
