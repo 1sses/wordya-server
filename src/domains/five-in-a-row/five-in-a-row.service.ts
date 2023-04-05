@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/prisma/prisma.service';
 import { CheckWordDto } from './dto/check-word.dto';
-import { FiveInARow, FiveInARowStatus } from '@prisma/client';
+import { FiveInARowStatus } from '@prisma/client';
 import { ParaphraserAPI } from '../../lib/api/paraphraser';
 import { answers } from '../../lib/answers';
 
@@ -31,27 +31,22 @@ export class FiveInARowService {
       where: { profile: { userId } },
       orderBy: { createdAt: 'desc' },
     });
+    // rewrite?
     if (lastGame?.status === FiveInARowStatus.IN_PROGRESS) {
       const matches = lastGame.attempts.map((word) =>
         this.match(word, lastGame.word),
       );
-      return {
-        game: lastGame,
-        matches,
-      };
+      return { matches, attempts: lastGame.attempts };
     }
 
     const word = this.paraphraserApi.getRandomWord();
-    const newGame = await this.prisma.fiveInARow.create({
+    await this.prisma.fiveInARow.create({
       data: {
         profile: { connect: { userId } },
         word,
       },
     });
-    return {
-      game: newGame,
-      matches: [],
-    };
+    return { matches: [], attempts: [] };
   }
 
   async checkWord(userId: number, { word }: CheckWordDto) {
@@ -61,6 +56,7 @@ export class FiveInARowService {
     });
     if (!lastGame) throw new Error(answers.error.fiveInARow.notFound);
     const { response } = await this.paraphraserApi.checkWord(word);
+    console.log(response);
     for (const key in response) {
       if (
         response[key].original === response[key].lemma &&
@@ -71,19 +67,17 @@ export class FiveInARowService {
         return {
           valid: false,
           matches: [],
-          game: lastGame,
         };
       }
     }
     const matches = this.match(word, lastGame.word);
-    const updatedGame = await this.prisma.fiveInARow.update({
+    await this.prisma.fiveInARow.update({
       where: { id: lastGame.id },
       data: { attempts: { push: word } },
     });
     return {
       valid: true,
       matches,
-      game: updatedGame,
     };
   }
 
@@ -96,31 +90,57 @@ export class FiveInARowService {
     const status = lastGame.attempts.includes(lastGame.word)
       ? FiveInARowStatus.WIN
       : FiveInARowStatus.LOSE;
-    return this.prisma.fiveInARow.update({
+    await this.prisma.fiveInARow.update({
       where: { id: lastGame.id },
       data: { status },
     });
+    return { status, word: lastGame.word };
   }
 
   async statistics(userId: number) {
     const games = await this.prisma.fiveInARow.findMany({
-      where: { profile: { userId } },
+      where: {
+        profile: { userId },
+        status: { not: FiveInARowStatus.IN_PROGRESS },
+      },
       orderBy: { createdAt: 'desc' },
     });
-    const played = games.length;
-    const wins = games.filter(
+    const winGames = games.filter(
       (game) => game.status === FiveInARowStatus.WIN,
-    ).length;
-    const averageAttempts = games.reduce(
-      (acc, game) => acc + game.attempts.length,
-      0,
     );
-    // количество побед подряд (максимум и сейчас)
-    // количество побед по попыткам
+    const played = games.length;
+    const wins = winGames.length;
+    const averageAttempts =
+      winGames.reduce((acc, game) => acc + game.attempts.length, 0) /
+      winGames.length;
+    let maximumWins = 0;
+    let curWins = 0;
+    for (const game of games) {
+      if (game.status === FiveInARowStatus.WIN) {
+        maximumWins++;
+        if (curWins > maximumWins) maximumWins = curWins;
+      } else {
+        curWins = 0;
+      }
+    }
+    let currentWins = 0;
+    for (const game of games) {
+      if (game.status === FiveInARowStatus.WIN) currentWins++;
+      else break;
+    }
+    const gamesByAttempts: { [key: number]: number } = {};
+    for (const game of winGames) {
+      const attempts = game.attempts.length;
+      if (gamesByAttempts[attempts]) gamesByAttempts[attempts]++;
+      else gamesByAttempts[attempts] = 1;
+    }
     return {
       played,
       wins,
       averageAttempts,
+      maximumWins,
+      currentWins,
+      gamesByAttempts,
     };
   }
 }

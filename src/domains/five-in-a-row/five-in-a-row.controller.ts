@@ -24,7 +24,7 @@ export class FiveInARowController {
       ok: true,
       statusCode: HttpStatus.OK,
       message: '',
-      data: { result },
+      data: { ...result },
     };
   }
 
@@ -38,18 +38,29 @@ export class FiveInARowController {
       ok: true,
       statusCode: HttpStatus.OK,
       message: '',
-      data: { result },
+      data: { ...result },
     };
   }
 
   @Get('end')
   async end(@Param('userId') userId: number): Promise<answerType> {
-    const game = await this.fiveInARowService.end(userId);
+    const endData = await this.fiveInARowService.end(userId);
     return {
       ok: true,
       statusCode: HttpStatus.OK,
       message: '',
-      data: { game },
+      data: { ...endData },
+    };
+  }
+
+  @Get('/statistics')
+  async statistics(@Param('userId') userId: number): Promise<answerType> {
+    const statistics = await this.fiveInARowService.statistics(userId);
+    return {
+      ok: true,
+      statusCode: HttpStatus.OK,
+      message: '',
+      data: { ...statistics },
     };
   }
 }

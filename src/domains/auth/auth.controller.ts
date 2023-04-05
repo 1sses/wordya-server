@@ -71,13 +71,15 @@ export class AuthController {
     };
   }
 
-  @Get('validate')
+  @Get('re-authenticate')
   @UseGuards(AuthGuard)
-  async validate(): Promise<answerType> {
+  async reAuthenticate(@Param('userId') userId: number): Promise<answerType> {
+    const user = await this.authService.reAuthenticate(userId);
     return {
       ok: true,
       statusCode: HttpStatus.OK,
       message: answers.success.user.login,
+      data: { user },
     };
   }
 

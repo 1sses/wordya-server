@@ -63,6 +63,10 @@ export class AuthService {
     return user;
   }
 
+  async reAuthenticate(userId: number): Promise<User> {
+    return this.prisma.user.findUnique({ where: { id: userId } });
+  }
+
   async confirmEmail({ token }: { token: string }): Promise<User> {
     const activation = await this.prisma.emailActivation.findFirst({
       where: { token },

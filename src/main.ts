@@ -9,9 +9,9 @@ import { HttpExceptionFilter } from './lib/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors({ credentials: true, origin: process.env.ORIGIN });
   app.use(helmet());
   app.use(cookieParser());
-  app.enableCors({ credentials: true, origin: process.env.ORIGIN });
   // app.use(csurf());
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);
