@@ -63,4 +63,9 @@ export class FiveInARowController {
       data: { ...statistics },
     };
   }
+
+  @Get('test')
+  async test() {
+    return this.fiveInARowService.test();
+  }
 }

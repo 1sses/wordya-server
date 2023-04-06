@@ -1,37 +1,14 @@
 import axios from 'axios';
 
-const words = [
-  'атлет',
-  'бухта',
-  'герой',
-  'дрель',
-  'жердь',
-  'знамя',
-  'исход',
-  'кукла',
-  'место',
-  'нюанс',
-  'облик',
-  'ранец',
-  'сцена',
-  'упрек',
-  'ферзь',
-  'хлыст',
-  'честь',
-  'щипцы',
-  'эклер',
-  'юрист',
-  'ягода',
-]; // temp, remove later
+// http://russkiyslovar.ru/iz-5-bukv
 
 export class ParaphraserAPI {
-  private token: string;
+  private readonly token: string;
   constructor() {
     this.token = process.env.PARAPHRASER_TOKEN;
   }
 
   public async checkWord(word: string) {
-    // http://www.paraphraser.ru/api?c=vector&query=%D0%BA%D1%80%D1%8B%D1%88%D0%B8&top=3&lang=ru&format=json&token=TOKEN&forms=0&scores=0
     const response = await axios.get('http://www.paraphraser.ru/api', {
       params: {
         c: 'vector',
@@ -50,5 +27,35 @@ export class ParaphraserAPI {
   public getRandomWord() {
     const randomKey = Math.floor(Math.random() * words.length);
     return words[randomKey];
+  }
+
+  public async test() {
+    for (const word of words) {
+      const response = await axios.get('http://www.paraphraser.ru/api', {
+        params: {
+          c: 'vector',
+          query: word,
+          top: 3,
+          lang: 'ru',
+          format: 'json',
+          token: this.token,
+          forms: 0,
+          scores: 0,
+        },
+      });
+      for (const key in response.data.response) {
+        if (
+          response.data.response[key].original ===
+            response.data.response[key].lemma &&
+          response.data.response[key].vector.length > 0
+        ) {
+          console.log('Match for word: ', word);
+          break;
+        }
+        if (!response.data.response[+key + 1]) {
+          console.log('No match for word: ', word, response.data.response);
+        }
+      }
+    }
   }
 }

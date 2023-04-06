@@ -143,4 +143,8 @@ export class FiveInARowService {
       gamesByAttempts,
     };
   }
+
+  async test() {
+    return await this.paraphraserApi.test();
+  }
 }
