@@ -2,14 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/prisma/prisma.service';
 import { CheckWordDto } from './dto/check-word.dto';
 import { FiveInARowStatus } from '@prisma/client';
-import { ParaphraserAPI } from '../../lib/api/paraphraser';
 import { answers } from '../../lib/answers';
+import { WordsAPI } from '../../lib/api/words';
+import { StartDto } from './dto/start.dto';
+import { StatisticsDto } from './dto/statistics.dto';
+import { EndDto } from './dto/end.dto';
 
 @Injectable()
 export class FiveInARowService {
   constructor(private prisma: PrismaService) {}
 
-  private paraphraserApi = new ParaphraserAPI();
+  private wordsApi = new WordsAPI();
 
   private match(enteredWord, originalWord) {
     const matches: string[] = [];
@@ -26,49 +29,51 @@ export class FiveInARowService {
     return matches;
   }
 
-  async start(userId: number) {
+  async start(userId: number, { difficulty }: StartDto) {
     const lastGame = await this.prisma.fiveInARow.findFirst({
-      where: { profile: { userId } },
+      where: {
+        profile: { userId },
+        difficulty,
+        status: FiveInARowStatus.IN_PROGRESS,
+      },
       orderBy: { createdAt: 'desc' },
     });
-    // rewrite?
-    if (lastGame?.status === FiveInARowStatus.IN_PROGRESS) {
+    if (lastGame) {
+      console.log('continue with', difficulty);
       const matches = lastGame.attempts.map((word) =>
         this.match(word, lastGame.word),
       );
       return { matches, attempts: lastGame.attempts };
     }
 
-    const word = this.paraphraserApi.getRandomWord();
+    console.log('start with', difficulty);
+    const { word } = this.wordsApi.getRandomWord({ difficulty });
     await this.prisma.fiveInARow.create({
       data: {
         profile: { connect: { userId } },
         word,
+        difficulty,
       },
     });
     return { matches: [], attempts: [] };
   }
 
-  async checkWord(userId: number, { word }: CheckWordDto) {
+  async checkWord(userId: number, { word, difficulty }: CheckWordDto) {
     const lastGame = await this.prisma.fiveInARow.findFirst({
-      where: { profile: { userId } },
+      where: {
+        profile: { userId },
+        difficulty,
+        status: FiveInARowStatus.IN_PROGRESS,
+      },
       orderBy: { createdAt: 'desc' },
     });
     if (!lastGame) throw new Error(answers.error.fiveInARow.notFound);
-    const { response } = await this.paraphraserApi.checkWord(word);
-    console.log(response);
-    for (const key in response) {
-      if (
-        response[key].original === response[key].lemma &&
-        response[key].vector.length > 0
-      )
-        break;
-      if (!response[+key + 1]) {
-        return {
-          valid: false,
-          matches: [],
-        };
-      }
+    const valid = this.wordsApi.checkWord(word);
+    if (!valid) {
+      return {
+        valid,
+        matches: [],
+      };
     }
     const matches = this.match(word, lastGame.word);
     await this.prisma.fiveInARow.update({
@@ -76,14 +81,18 @@ export class FiveInARowService {
       data: { attempts: { push: word } },
     });
     return {
-      valid: true,
+      valid,
       matches,
     };
   }
 
-  async end(userId: number) {
+  async end(userId: number, { difficulty }: EndDto) {
     const lastGame = await this.prisma.fiveInARow.findFirst({
-      where: { profile: { userId } },
+      where: {
+        profile: { userId },
+        difficulty,
+        status: FiveInARowStatus.IN_PROGRESS,
+      },
       orderBy: { createdAt: 'desc' },
     });
     if (!lastGame) throw new Error(answers.error.fiveInARow.notFound);
@@ -97,10 +106,11 @@ export class FiveInARowService {
     return { status, word: lastGame.word };
   }
 
-  async statistics(userId: number) {
+  async statistics(userId: number, { difficulty }: StatisticsDto) {
     const games = await this.prisma.fiveInARow.findMany({
       where: {
         profile: { userId },
+        difficulty,
         status: { not: FiveInARowStatus.IN_PROGRESS },
       },
       orderBy: { createdAt: 'desc' },
@@ -142,9 +152,5 @@ export class FiveInARowService {
       currentWins,
       gamesByAttempts,
     };
-  }
-
-  async test() {
-    return await this.paraphraserApi.test();
   }
 }

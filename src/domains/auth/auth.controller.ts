@@ -15,7 +15,6 @@ import { Response } from 'express';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthGuard } from '../../lib/guards/auth.guard';
-import { ParaphraserAPI } from '../../lib/api/paraphraser';
 
 @Controller('auth')
 export class AuthController {
@@ -93,12 +92,5 @@ export class AuthController {
       statusCode: HttpStatus.OK,
       message: answers.success.user.logout,
     };
-  }
-
-  @Get('test')
-  async test() {
-    const api = new ParaphraserAPI();
-    await api.checkWord('крыша');
-    return 'done';
   }
 }
