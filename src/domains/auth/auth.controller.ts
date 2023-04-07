@@ -59,7 +59,7 @@ export class AuthController {
   ) {
     const user = await this.authService.login(loginDto);
     try {
-      response.cookie('jwt', this.jwtService.sign({ id: user.id }), {
+      response?.cookie('jwt', this.jwtService.sign({ id: user.id }), {
         httpOnly: true,
         expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
       });
@@ -68,7 +68,7 @@ export class AuthController {
         ok: false,
         statusCode: HttpStatus.CONFLICT,
         message: answers.success.user.login,
-        error: { error: e, cookie: response.cookie, response },
+        error: { error: e, response },
         data: { user },
       };
     }
