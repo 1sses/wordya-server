@@ -16,12 +16,9 @@ export class FiveInARowService {
 
   private match(enteredWord, originalWord) {
     const matches: string[] = [];
-    for (const letter of enteredWord) {
-      const includesLetter = originalWord.includes(letter);
-      if (
-        includesLetter &&
-        enteredWord.indexOf(letter) === originalWord.indexOf(letter)
-      )
+    for (let i = 0; i < enteredWord.length; i++) {
+      const includesLetter = originalWord.includes(enteredWord[i]);
+      if (includesLetter && enteredWord[i] === originalWord[i])
         matches.push('full');
       else if (includesLetter) matches.push('letter');
       else matches.push('no');
@@ -39,14 +36,12 @@ export class FiveInARowService {
       orderBy: { createdAt: 'desc' },
     });
     if (lastGame) {
-      console.log('continue with', difficulty);
       const matches = lastGame.attempts.map((word) =>
         this.match(word, lastGame.word),
       );
       return { matches, attempts: lastGame.attempts };
     }
 
-    console.log('start with', difficulty);
     const { word } = this.wordsApi.getRandomWord({ difficulty });
     await this.prisma.fiveInARow.create({
       data: {
@@ -68,6 +63,8 @@ export class FiveInARowService {
       orderBy: { createdAt: 'desc' },
     });
     if (!lastGame) throw new Error(answers.error.fiveInARow.notFound);
+    if (lastGame.attempts.length >= 5)
+      throw new Error(answers.error.fiveInARow.unableToCheck);
     const valid = this.wordsApi.checkWord(word);
     if (!valid) {
       return {
