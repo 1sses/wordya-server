@@ -64,6 +64,7 @@ export class AuthController {
         expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
       });
     } catch (e) {
+      console.log('THIS', e);
       return {
         ok: false,
         statusCode: HttpStatus.CONFLICT,
