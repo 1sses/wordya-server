@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import * as csurf from 'csurf';
 import { AppModule } from './app.module';
 import { PrismaService } from './lib/prisma/prisma.service';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { HttpExceptionFilter } from './lib/filters/http-exception.filter';
 
 async function bootstrap() {
