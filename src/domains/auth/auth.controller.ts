@@ -58,10 +58,10 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<answerType> {
     const user = await this.authService.login(loginDto);
-    // response.cookie('jwt', this.jwtService.sign({ id: user.id }), {
-    //   httpOnly: true,
-    //   expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-    // });
+    response.cookie('jwt', this.jwtService.sign({ id: user.id }), {
+      httpOnly: true,
+      expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+    });
     return {
       ok: true,
       statusCode: HttpStatus.OK,
