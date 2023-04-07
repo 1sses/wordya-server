@@ -56,7 +56,7 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<answerType> {
+  ) {
     const user = await this.authService.login(loginDto);
     try {
       response.cookie('jwt', this.jwtService.sign({ id: user.id }), {
@@ -68,7 +68,7 @@ export class AuthController {
         ok: false,
         statusCode: HttpStatus.CONFLICT,
         message: answers.success.user.login,
-        error: e,
+        error: { error: e, cookie: response.cookie, response },
         data: { user },
       };
     }
