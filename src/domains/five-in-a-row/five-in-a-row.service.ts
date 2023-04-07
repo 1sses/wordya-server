@@ -63,7 +63,7 @@ export class FiveInARowService {
       orderBy: { createdAt: 'desc' },
     });
     if (!lastGame) throw new Error(answers.error.fiveInARow.notFound);
-    if (lastGame.attempts.length >= 5)
+    if (lastGame.attempts.length >= 6)
       throw new Error(answers.error.fiveInARow.unableToCheck);
     const valid = this.wordsApi.checkWord(word);
     if (!valid) {
