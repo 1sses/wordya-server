@@ -58,10 +58,21 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<answerType> {
     const user = await this.authService.login(loginDto);
-    response.cookie?.('jwt', this.jwtService.sign({ id: user.id }), {
-      httpOnly: true,
-      expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-    });
+    try {
+      response.cookie('jwt', this.jwtService.sign({ id: user.id }), {
+        httpOnly: true,
+        expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      });
+    } catch (e) {
+      return {
+        ok: false,
+        statusCode: HttpStatus.CONFLICT,
+        message: answers.success.user.login,
+        error: e,
+        data: { user },
+      };
+    }
+
     return {
       ok: true,
       statusCode: HttpStatus.OK,
