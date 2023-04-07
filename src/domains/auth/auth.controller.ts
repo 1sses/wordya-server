@@ -53,21 +53,24 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(
-    @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) response: Response,
-  ): Promise<answerType> {
+  async login(@Body() loginDto: LoginDto, @Res() response: Response) {
     const user = await this.authService.login(loginDto);
     response.cookie('jwt', this.jwtService.sign({ id: user.id }), {
       httpOnly: true,
       expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
     });
-    return {
+    response.send({
       ok: true,
       statusCode: HttpStatus.OK,
       message: answers.success.user.login,
       data: { user },
-    };
+    });
+    // return {
+    //   ok: true,
+    //   statusCode: HttpStatus.OK,
+    //   message: answers.success.user.login,
+    //   data: { user },
+    // };
   }
 
   @Get('re-authenticate')
