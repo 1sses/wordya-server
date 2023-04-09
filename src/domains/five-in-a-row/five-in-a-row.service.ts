@@ -5,7 +5,6 @@ import { FiveInARowStatus } from '@prisma/client';
 import { answers } from '../../lib/answers';
 import { WordsAPI } from '../../lib/api/words';
 import { StartDto } from './dto/start.dto';
-import { StatisticsDto } from './dto/statistics.dto';
 import { EndDto } from './dto/end.dto';
 
 @Injectable()
@@ -103,51 +102,59 @@ export class FiveInARowService {
     return { status, word: lastGame.word };
   }
 
-  async statistics(userId: number, { difficulty }: StatisticsDto) {
+  async statistics(userId: number) {
     const games = await this.prisma.fiveInARow.findMany({
       where: {
         profile: { userId },
-        difficulty,
         status: { not: FiveInARowStatus.IN_PROGRESS },
       },
       orderBy: { createdAt: 'desc' },
     });
-    const winGames = games.filter(
-      (game) => game.status === FiveInARowStatus.WIN,
-    );
-    const played = games.length;
-    const wins = winGames.length;
-    const averageAttempts =
-      winGames.reduce((acc, game) => acc + game.attempts.length, 0) /
-      winGames.length;
-    let maximumWins = 0;
-    let curWins = 0;
-    for (const game of games) {
-      if (game.status === FiveInARowStatus.WIN) {
-        maximumWins++;
-        if (curWins > maximumWins) maximumWins = curWins;
-      } else {
-        curWins = 0;
+    const statistics = [];
+    // group by difficulty
+    for (const difficulty of [1, 2, 3, 4, 5]) {
+      const difficultyGames = games.filter(
+        (game) => game.difficulty === difficulty,
+      );
+      const winGames = difficultyGames.filter(
+        (game) => game.status === FiveInARowStatus.WIN,
+      );
+      const played = difficultyGames.length;
+      const wins = winGames.length;
+      const averageAttempts =
+        winGames.reduce((acc, game) => acc + game.attempts.length, 0) /
+        winGames.length;
+      let maximumWins = 0;
+      let curWins = 0;
+      for (const game of difficultyGames) {
+        if (game.status === FiveInARowStatus.WIN) {
+          curWins++;
+          if (curWins > maximumWins) maximumWins = curWins;
+        } else {
+          curWins = 0;
+        }
       }
+      let currentWins = 0;
+      for (const game of difficultyGames) {
+        if (game.status === FiveInARowStatus.WIN) currentWins++;
+        else break;
+      }
+      const gamesByAttempts: { [key: number]: number } = {};
+      for (const game of winGames) {
+        const attempts = game.attempts.length;
+        if (gamesByAttempts[attempts]) gamesByAttempts[attempts]++;
+        else gamesByAttempts[attempts] = 1;
+      }
+      statistics.push({
+        difficulty,
+        played,
+        wins,
+        averageAttempts,
+        maximumWins,
+        currentWins,
+        gamesByAttempts,
+      });
     }
-    let currentWins = 0;
-    for (const game of games) {
-      if (game.status === FiveInARowStatus.WIN) currentWins++;
-      else break;
-    }
-    const gamesByAttempts: { [key: number]: number } = {};
-    for (const game of winGames) {
-      const attempts = game.attempts.length;
-      if (gamesByAttempts[attempts]) gamesByAttempts[attempts]++;
-      else gamesByAttempts[attempts] = 1;
-    }
-    return {
-      played,
-      wins,
-      averageAttempts,
-      maximumWins,
-      currentWins,
-      gamesByAttempts,
-    };
+    return { statistics };
   }
 }

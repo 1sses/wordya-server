@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Get,
   HttpStatus,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -11,7 +13,6 @@ import { answerType } from '../../lib/answers';
 import { AuthGuard } from '../../lib/guards/auth.guard';
 import { CheckWordDto } from './dto/check-word.dto';
 import { StartDto } from './dto/start.dto';
-import { StatisticsDto } from './dto/statistics.dto';
 import { EndDto } from './dto/end.dto';
 
 @Controller('five-in-a-row')
@@ -33,7 +34,7 @@ export class FiveInARowController {
     };
   }
 
-  @Post('check-word')
+  @Patch('check-word')
   async checkWord(
     @Param('userId') userId: number,
     @Body() checkWordDto: CheckWordDto,
@@ -47,7 +48,7 @@ export class FiveInARowController {
     };
   }
 
-  @Post('end')
+  @Patch('end')
   async end(
     @Param('userId') userId: number,
     @Body() endDto: EndDto,
@@ -61,15 +62,9 @@ export class FiveInARowController {
     };
   }
 
-  @Post('/statistics')
-  async statistics(
-    @Param('userId') userId: number,
-    @Body() statisticsDto: StatisticsDto,
-  ): Promise<answerType> {
-    const statistics = await this.fiveInARowService.statistics(
-      userId,
-      statisticsDto,
-    );
+  @Get('/statistics')
+  async statistics(@Param('userId') userId: number): Promise<answerType> {
+    const statistics = await this.fiveInARowService.statistics(userId);
     return {
       ok: true,
       statusCode: HttpStatus.OK,
