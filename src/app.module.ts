@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { FiveInARowModule } from './domains/five-in-a-row/five-in-a-row.module';
 import { AuthModule } from './domains/auth/auth.module';
 import { UsersModule } from './domains/users/users.module';
+import { AchievementsModule } from './domains/achievements/achievements.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { UsersModule } from './domains/users/users.module';
     }),
     AuthModule,
     UsersModule,
+    AchievementsModule,
     FiveInARowModule,
   ],
   controllers: [AppController],

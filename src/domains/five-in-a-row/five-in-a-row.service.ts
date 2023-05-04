@@ -6,6 +6,7 @@ import { answers } from '../../lib/answers';
 import { WordsAPI } from '../../lib/api/words';
 import { StartDto } from './dto/start.dto';
 import { EndDto } from './dto/end.dto';
+import { fiveInARowAchievements } from '../achievements/lists/five-in-a-row.achievements';
 
 @Injectable()
 export class FiveInARowService {
@@ -23,6 +24,33 @@ export class FiveInARowService {
       else matches.push('no');
     }
     return matches;
+  }
+
+  private async resolveAchievements(userId: number) {
+    const profile = await this.prisma.profile.findUnique({
+      where: { userId },
+      include: {
+        fiveInARows: {
+          where: {
+            profile: { userId },
+            status: { not: FiveInARowStatus.IN_PROGRESS },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        achievements: true,
+      },
+    });
+    const newAchievements = [];
+    for (const achievement of fiveInARowAchievements) {
+      const findResult = profile.achievements.find(
+        (item) => item.name === achievement.name,
+      );
+      if (findResult) continue;
+      const resolveResult = achievement.resolve(profile.fiveInARows);
+      if (!resolveResult) continue;
+      newAchievements.push({ name: achievement.name });
+    }
+    return newAchievements;
   }
 
   async start(userId: number, { difficulty }: StartDto) {
@@ -99,6 +127,18 @@ export class FiveInARowService {
       where: { id: lastGame.id },
       data: { status },
     });
+    const newAchievements = await this.resolveAchievements(userId);
+    if (newAchievements) {
+      const data = newAchievements.map((data) => ({
+        ...data,
+        profile: { connect: { userId } },
+      }));
+      await Promise.all(
+        data.map((data) => {
+          return this.prisma.achievement.create({ data });
+        }),
+      );
+    }
     return { status, word: lastGame.word };
   }
 
