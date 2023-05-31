@@ -96,7 +96,7 @@ export class FiveInARowService {
     if (!valid) {
       return {
         valid,
-        matches: [],
+        matches: [] as string[],
       };
     }
     const matches = this.match(word, lastGame.word);
