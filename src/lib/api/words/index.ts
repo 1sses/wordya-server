@@ -9,7 +9,6 @@ export class WordsAPI {
   }
 
   public getRandomWord({ difficulty }: { difficulty: number }) {
-    // console.log(words);
     const searchingWords = words.filter((w) => w.difficulty === difficulty);
     const randomKey = Math.floor(Math.random() * searchingWords.length);
     return searchingWords[randomKey];
